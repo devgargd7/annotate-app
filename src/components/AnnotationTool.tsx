@@ -84,31 +84,33 @@ const AnnotationTool: React.FC = () => {
   // Toggle image selection
   const toggleImageSelection = (imageId: string) => {
     const newSelectedIds = new Set(selectedImageIds);
-
+    
     if (newSelectedIds.has(imageId)) {
       newSelectedIds.delete(imageId);
-
+      
       // Update annotation to mark as not relevant
-      setAnnotations(prev =>
-        prev.map(a =>
-          a.imageId === imageId
-            ? { ...a, relevant: false, rank: null }
+      setAnnotations(prev => {
+        const newAnnotations = prev.map(a => 
+          a.imageId === imageId 
+            ? { ...a, relevant: false, rank: null } 
             : a
-        )
-      );
+        );
+        return newAnnotations;
+      });
     } else {
       newSelectedIds.add(imageId);
-
+      
       // Update annotation to mark as relevant
-      setAnnotations(prev =>
-        prev.map(a =>
-          a.imageId === imageId
-            ? { ...a, relevant: true }
+      setAnnotations(prev => {
+        const newAnnotations = prev.map(a => 
+          a.imageId === imageId 
+            ? { ...a, relevant: true } 
             : a
-        )
-      );
+        );
+        return newAnnotations;
+      });
     }
-
+    
     setSelectedImageIds(newSelectedIds);
   };
 
@@ -172,54 +174,67 @@ const AnnotationTool: React.FC = () => {
       timestamp: new Date().toISOString(),
       annotations
     };
-
+    
     // Add to accumulated results
     setAllResults(prev => [...prev, newResult]);
-
+    
     return true;
-  };
-
-  // Save single result (current only)
-  const handleSaveCurrentOnly = () => {
-    if (addCurrentResults()) {
-      // Save only current results
-      saveAnnotationResults(
-        userName,
-        taskName,
-        currentQueryImage.id,
-        annotations
-      );
-    }
   };
 
   // Save results
   const handleSave = () => {
-    if (addCurrentResults()) {
-      // Save all accumulated results
-      const allResultsToSave = [...allResults];
-
-      // Save all results
-      saveAllResults(userName, taskName, allResultsToSave);
-
-      // Reset accumulated results after saving
-      setAllResults([]);
-
-      // Move to next query if available
-      if (currentQueryIndex < queryImages(userName, taskName).length - 1) {
-        moveToNextQuery();
-      } else {
-        // Reset everything if we're on the last query
-        setCurrentQueryIndex(0);
-        setSelectedImageIds(new Set());
-        const resetAnnotations = images.map(image => ({
-          imageId: image.id,
-          relevant: false,
-          rank: null
-        }));
-        setAnnotations(resetAnnotations);
-
-        alert('All queries completed! Starting over.');
-      }
+    if (!userName || !taskName) {
+      alert('Please select both User Name and Task Name');
+      return;
+    }
+    
+    // Check if any images are marked as relevant
+    const hasRelevantImages = annotations.some(a => a.relevant);
+    
+    if (!hasRelevantImages) {
+      alert('Please select at least one relevant image before saving.');
+      return;
+    }
+    
+    // Create new result object for current state
+    const newResult: SavedResult = {
+      userName,
+      taskName,
+      queryImageId: currentQueryImage.id,
+      timestamp: new Date().toISOString(),
+      annotations
+    };
+    
+    
+    // Create array with all results including current
+    const resultsToSave = [...allResults, newResult];
+    
+    if (resultsToSave.length === 0) {
+      alert('No results to save. Please select at least one relevant image.');
+      return;
+    }
+    
+    // Save all results
+    saveAllResults(userName, taskName, resultsToSave);
+    
+    // Reset accumulated results after saving
+    setAllResults([]);
+    
+    // Move to next query if available
+    if (currentQueryIndex < queryImages(userName, taskName).length - 1) {
+      moveToNextQuery();
+    } else {
+      // Reset everything if we're on the last query
+      setCurrentQueryIndex(0);
+      setSelectedImageIds(new Set());
+      const resetAnnotations = images.map(image => ({
+        imageId: image.id,
+        relevant: false,
+        rank: null
+      }));
+      setAnnotations(resetAnnotations);
+      
+      alert('All queries completed! Starting over.');
     }
   };
 

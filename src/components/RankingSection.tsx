@@ -32,11 +32,9 @@ const RankingSection: React.FC<RankingSectionProps> = ({
                 <img src={image.url} alt={`Thumbnail ${image.id}`} />
               </div>
               <div className="ranking-item-controls">
-                <label htmlFor={`rank-${image.id}`}>Rank:</label>
+                <label htmlFor={`${image.id}`}>Rank:</label>
                 <input
-                  id={`rank-${image.id}`}
-                  type="number"
-                  min="1"
+                  id={`${image.id}`}
                   value={currentRank}
                   onChange={(e) => {
                     const value = e.target.value;
